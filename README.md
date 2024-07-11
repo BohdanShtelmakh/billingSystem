@@ -10,7 +10,7 @@
 
 1. Clone the repository:
    ```bash
-   git clone <repository_url>
+   git clone git@github.com:BohdanShtelmakh/billingSystem.git
    cd auth-billing-system
    ```
 2. Set up .env properties:
