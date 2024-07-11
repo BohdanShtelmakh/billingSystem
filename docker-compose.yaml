@@ -1,0 +1,46 @@
+version: '3.5'
+
+services:
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - ${EXTERNAL_DB_PORT}:${DB_PORT}
+    volumes:
+      - ./:/home/node/app
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    environment:
+      - PORT=${PORT}
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./:/home/node/app
+    command: bash -c 'while !</dev/tcp/db/${DB_PORT}; do sleep 1; done; npm i; npm run seed; npm run start:dev'
+
+  nginx:
+    build:
+      context: ./
+      dockerfile: nginx/Dockerfile
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.template:ro
+      - ./:/home/node/app
+    depends_on:
+      - db
+      - app
+    ports:
+      - ${EXTERNAL_NGINX_PORT_HTTP}:80
+      - ${EXTERNAL_NGINX_PORT_HTTPS}:443
+    environment:
+      NGINX_EXTERNAL_HOST_HTTP: ${EXTERNAL_NGINX_PORT_HTTP}
+      NGINX_EXTERNAL_HOST_HTTPS: ${EXTERNAL_NGINX_PORT_HTTPS}
+      NODE_PORT: ${PORT}
+    command: bash -c "envsubst '$${NGINX_EXTERNAL_HOST_HTTP},$${NGINX_EXTERNAL_HOST_HTTPS},$${NODE_PORT}' < /etc/nginx/conf.d/default.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"

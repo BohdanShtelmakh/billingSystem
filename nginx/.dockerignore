@@ -1,0 +1,9 @@
+.git
+.history
+.idea
+.vscode
+.cache
+.DS_Store
+
+.gitignore
+.eslintrc.js
